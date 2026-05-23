@@ -69,6 +69,7 @@ const { active = false } = Astro.props;
 
   const statusText = document.getElementById('config-status');
   const optionContainer = document.getElementById('background-options');
+  const localStorageKey = 'portafolio_config_v1';
 
   const configFields = {
     theme: () => document.querySelector('input[name="theme"]:checked')?.value || 'dark',
@@ -105,23 +106,50 @@ const { active = false } = Astro.props;
     document.documentElement.style.setProperty('--background-image', `url('${config.backgroundUrl}')`);
   }
 
+  function loadLocalConfig() {
+    try {
+      const stored = localStorage.getItem(localStorageKey);
+      return stored ? JSON.parse(stored) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function saveLocalConfig(config) {
+    try {
+      localStorage.setItem(localStorageKey, JSON.stringify(config));
+    } catch {
+      // localStorage puede no estar disponible en todos los navegadores.
+    }
+  }
+
   async function loadConfig() {
+    const defaultConfig = {
+      theme: 'dark',
+      background: backgrounds[0].id,
+      backgroundUrl: backgrounds[0].url,
+      calendar: { showEvents: true, showHolidays: true },
+      timer: { focusMinutes: 25, breakMinutes: 5, customMinutes: 15 }
+    };
+
+    const localConfig = loadLocalConfig();
+    if (localConfig) {
+      applyConfigToForm(localConfig);
+      setPageTheme(localConfig);
+    }
+
     try {
       const response = await fetch('/api/config');
       if (!response.ok) throw new Error('No se pudo cargar la configuración');
       const config = await response.json();
+      saveLocalConfig(config);
       applyConfigToForm(config);
       setPageTheme(config);
     } catch (error) {
-      console.warn(error);
-      const defaultConfig = {
-        theme: 'dark',
-        background: backgrounds[0].id,
-        backgroundUrl: backgrounds[0].url,
-        calendar: { showEvents: true, showHolidays: true },
-        timer: { focusMinutes: 25, breakMinutes: 5, customMinutes: 15 }
-      };
-      setPageTheme(defaultConfig);
+      if (!localConfig) {
+        applyConfigToForm(defaultConfig);
+        setPageTheme(defaultConfig);
+      }
     }
   }
 
@@ -147,19 +175,22 @@ const { active = false } = Astro.props;
 
   async function saveConfig() {
     const payload = getFormConfig();
+    saveLocalConfig(payload);
+    setPageTheme(payload);
+
     try {
       const response = await fetch('/api/config', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
-      if (!response.ok) throw new Error('No se pudo guardar');
+      if (!response.ok) throw new Error('No se pudo guardar en el backend');
       const result = await response.json();
       setPageTheme(result.config);
       statusText.textContent = 'Configuración guardada correctamente.';
     } catch (error) {
-      statusText.textContent = 'Error al guardar la configuración. Usa localStorage o configura SQL Server Express.';
-      console.error(error);
+      statusText.textContent = 'Configuración guardada localmente. GitHub Pages no dispone de backend para /api/config.';
+      console.warn(error);
     }
   }
 

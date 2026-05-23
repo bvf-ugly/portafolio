@@ -40,20 +40,27 @@ import '../styles/global.css';
       ];
 
       const root = document.documentElement.style;
+      const localStorageKey = 'portafolio_config_v1';
+      const defaultConfig = {
+        theme: 'dark',
+        backgroundUrl: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&w=2000&q=80',
+        calendar: { showEvents: true, showHolidays: true },
+        timer: { focusMinutes: 25, breakMinutes: 5, customMinutes: 15 }
+      };
 
       function applyPalette(palette) {
         Object.entries(palette).forEach(([key, value]) => {
           if (key === 'backgroundUrl') return;
           root.setProperty(`--${key}`, value);
         });
-        root.setProperty('--background-image', `url('${palette.backgroundUrl}')`);
+        if (palette.backgroundUrl) {
+          root.setProperty('--background-image', `url('${palette.backgroundUrl}')`);
+        }
       }
 
       function applyConfig(config) {
         document.documentElement.classList.toggle('theme-light', config.theme === 'light');
-        if (config.backgroundUrl) {
-          root.setProperty('--background-image', `url('${config.backgroundUrl}')`);
-        }
+        applyPalette(config);
         if (config.theme === 'light') {
           root.setProperty('--bg', '#f4f7ff');
           root.setProperty('--surface', 'rgba(255, 255, 255, 0.85)');
@@ -67,15 +74,45 @@ import '../styles/global.css';
         applyPalette(defaultPalettes[new Date().getHours() % defaultPalettes.length]);
       }
 
+      function loadLocalConfig() {
+        try {
+          const stored = localStorage.getItem(localStorageKey);
+          return stored ? JSON.parse(stored) : null;
+        } catch {
+          return null;
+        }
+      }
+
+      function saveLocalConfig(config) {
+        try {
+          localStorage.setItem(localStorageKey, JSON.stringify(config));
+        } catch {
+          // Ignora errores de localStorage.
+        }
+      }
+
       async function loadConfig() {
+        const storedConfig = loadLocalConfig();
+        if (storedConfig) {
+          applyConfig(storedConfig);
+          window.PORTAFOLIO_CONFIG = storedConfig;
+          window.dispatchEvent(new CustomEvent('portafolioConfigLoaded', { detail: storedConfig }));
+        }
+
         try {
           const response = await fetch('/api/config');
           if (!response.ok) throw new Error('No config');
           const config = await response.json();
           applyConfig(config);
+          saveLocalConfig(config);
           window.PORTAFOLIO_CONFIG = config;
           window.dispatchEvent(new CustomEvent('portafolioConfigLoaded', { detail: config }));
         } catch {
+          if (!storedConfig) {
+            applyConfig(defaultConfig);
+            window.PORTAFOLIO_CONFIG = defaultConfig;
+            window.dispatchEvent(new CustomEvent('portafolioConfigLoaded', { detail: defaultConfig }));
+          }
           fallbackPalette();
         }
       }
@@ -167,11 +204,6 @@ import '../styles/global.css';
         }
       }
 
-      if ('requestIdleCallback' in window) {
-        requestIdleCallback(() => extractPalette(imageUrl));
-      } else {
-        window.setTimeout(() => extractPalette(imageUrl), 200);
-      }
     </script>
   </head>
   <body class="app-body">

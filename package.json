@@ -6,13 +6,15 @@
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
-    "preview": "astro preview"
+    "preview": "astro preview",
+    "deploy": "pnpm build && gh-pages -d dist"
   },
   "dependencies": {
     "astro": "^4.10.0",
     "mssql": "^12.5.4"
   },
   "devDependencies": {
-    "@types/mssql": "^12.3.0"
+    "@types/mssql": "^12.3.0",
+    "gh-pages": "^5.0.0"
   }
 }

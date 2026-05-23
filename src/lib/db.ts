@@ -21,10 +21,10 @@ function getSqlConfig(): sql.config | string {
   return {
     server: process.env.SQLSERVER_HOST || 'localhost',
     authentication: {
-      type: process.env.SQLSERVER_AUTH || 'default', // 'default' para usuario/contraseña, 'ntlm' para Windows
+      type: (process.env.SQLSERVER_AUTH as any) || 'default', // 'default' para usuario/contraseña, 'ntlm' para Windows
       options: {
-        userName: process.env.SQLSERVER_USER || 'sa',
-        password: process.env.SQLSERVER_PASSWORD || 'yourStrong(!)Password',
+        userName: process.env.SQLSERVER_USER || '',
+        password: process.env.SQLSERVER_PASSWORD || '',
         domain: process.env.SQLSERVER_DOMAIN || undefined
       }
     },
