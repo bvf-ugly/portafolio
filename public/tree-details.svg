@@ -1,0 +1,36 @@
+<svg width="800" height="480" viewBox="0 0 800 480" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="leafGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#3AB0FF" />
+      <stop offset="100%" stop-color="#7DDFFF" />
+    </linearGradient>
+    <linearGradient id="trunkGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#5A3F1B" />
+      <stop offset="100%" stop-color="#2F1A0E" />
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="800" height="480" rx="32" fill="#08111f" />
+  <g opacity="0.9">
+    <path d="M420 350 C420 320, 420 320, 400 280 C380 240, 330 220, 310 220 C290 220, 260 230, 240 250 C220 270, 220 300, 220 330" stroke="#7DDFFF" stroke-width="12" fill="none" stroke-linecap="round" />
+    <path d="M380 360 C380 340, 380 340, 360 310 C340 280, 300 260, 280 260" stroke="#7DDFFF" stroke-width="10" fill="none" stroke-linecap="round" />
+    <path d="M440 360 C440 330, 440 330, 460 300 C480 270, 520 250, 540 250 C560 250, 590 260, 610 280 C630 300, 630 330, 630 350" stroke="#7DDFFF" stroke-width="12" fill="none" stroke-linecap="round" />
+  </g>
+  <path d="M380 430 C380 380, 420 320, 420 280" stroke="url(#trunkGrad)" stroke-width="40" stroke-linecap="round" />
+  <circle cx="300" cy="170" r="55" fill="url(#leafGrad)" opacity="0.95" />
+  <circle cx="450" cy="120" r="65" fill="url(#leafGrad)" opacity="0.95" />
+  <circle cx="550" cy="210" r="50" fill="url(#leafGrad)" opacity="0.95" />
+  <circle cx="360" cy="90" r="40" fill="url(#leafGrad)" opacity="0.95" />
+  <circle cx="240" cy="240" r="45" fill="url(#leafGrad)" opacity="0.95" />
+  <circle cx="520" cy="330" r="50" fill="url(#leafGrad)" opacity="0.95" />
+  <g font-family="Inter, Arial, sans-serif" text-anchor="middle" font-weight="700" fill="#fff">
+    <text x="300" y="175" font-size="18">Calendario</text>
+    <text x="450" y="125" font-size="18">Cronómetro</text>
+    <text x="550" y="215" font-size="18">Configuración</text>
+    <text x="360" y="95" font-size="16">Widgets</text>
+    <text x="240" y="245" font-size="16">UI</text>
+    <text x="520" y="335" font-size="16">Temas</text>
+    <text x="400" y="60" font-size="20">Árbol de detalles</text>
+  </g>
+  <rect x="80" y="380" width="640" height="68" rx="24" fill="rgba(255,255,255,0.06)" />
+  <text x="400" y="420" font-family="Inter, Arial, sans-serif" text-anchor="middle" fill="#9ba8c7" font-size="18">Estructura del portafolio con secciones clave y configuración local</text>
+</svg>
