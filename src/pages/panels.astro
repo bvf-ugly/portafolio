@@ -1,0 +1,33 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Calendar from '../components/Calendar.astro';
+import Timer from '../components/Timer.astro';
+import Config from '../components/Config.astro';
+---
+
+<BaseLayout>
+  <main class="page-shell">
+    <section class="glass-panel hero-panel">
+      <div>
+        <span class="section-tag">Paneles ampliados</span>
+        <h1>Control completo del calendario, cronómetro y ajustes</h1>
+        <p>Accede a una vista profunda de cada herramienta, con más espacio para administrar tus eventos, temporizador y configuración.</p>
+      </div>
+      <div class="hero-actions">
+        <a class="button secondary" href="/">Volver al dashboard</a>
+      </div>
+    </section>
+
+    <section class="section section-grid-panel">
+      <div class="panel-section active">
+        <Calendar />
+      </div>
+      <div class="panel-section active">
+        <Timer />
+      </div>
+      <div class="panel-section active">
+        <Config active />
+      </div>
+    </section>
+  </main>
+</BaseLayout>

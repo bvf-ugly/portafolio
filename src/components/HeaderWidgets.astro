@@ -1,0 +1,238 @@
+---
+---
+<div class="header-widgets" aria-live="polite">
+  <div class="header-widget-tray">
+    <button id="hw-toggle-calendar" type="button" class="panel-toggle" aria-pressed="false" aria-label="Mostrar calendario">Calendario</button>
+    <button id="hw-toggle-timer" type="button" class="panel-toggle" aria-pressed="false" aria-label="Mostrar cronómetro">Cronómetro</button>
+  </div>
+
+  <div class="widget mini-calendar-widget glass-panel" id="hw-calendar-panel" aria-hidden="true">
+    <div class="mini-header">
+      <div>
+        <span class="widget-label">Calendario</span>
+        <strong id="hw-month-label">Abril 2026</strong>
+      </div>
+      <div class="widget-actions">
+        <button id="hw-prev" type="button" class="icon-button" aria-label="Mes anterior">‹</button>
+        <button id="hw-next" type="button" class="icon-button" aria-label="Próximo mes">›</button>
+        <button id="hw-close-calendar" type="button" class="icon-button" aria-label="Cerrar calendario">✕</button>
+      </div>
+    </div>
+    <div class="widget-body">
+      <div class="mini-calendar-grid" id="hw-mini-calendar"></div>
+      <div class="mini-calendar-info" id="hw-calendar-info">Selecciona un día para ver detalles.</div>
+    </div>
+  </div>
+
+  <div class="widget mini-timer-widget glass-panel" id="hw-timer-panel" aria-hidden="true">
+    <div class="mini-header">
+      <div>
+        <span class="widget-label">Cronómetro</span>
+        <strong id="hw-timer-mode">Focus</strong>
+      </div>
+      <button id="hw-close-timer" type="button" class="icon-button" aria-label="Cerrar cronómetro">✕</button>
+    </div>
+    <div class="widget-body">
+      <div class="mini-timer-display" id="hw-timer-display">25:00</div>
+      <div class="mini-timer-controls">
+        <button id="hw-timer-start" type="button" class="button primary small" aria-label="Iniciar">▶</button>
+        <button id="hw-timer-pause" type="button" class="button secondary small" aria-label="Pausar">⏸</button>
+        <button id="hw-timer-reset" type="button" class="button secondary small" aria-label="Reiniciar">↺</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script is:inline>
+  const dayNames = ['D', 'L', 'M', 'M', 'J', 'V', 'S'];
+  const hwMonthLabel = document.getElementById('hw-month-label');
+  const hwMiniCalendar = document.getElementById('hw-mini-calendar');
+  const hwCalendarInfo = document.getElementById('hw-calendar-info');
+  const hwPrev = document.getElementById('hw-prev');
+  const hwNext = document.getElementById('hw-next');
+  const hwCalendarPanel = document.getElementById('hw-calendar-panel');
+  const hwTimerPanel = document.getElementById('hw-timer-panel');
+  const toggleCalendar = document.getElementById('hw-toggle-calendar');
+  const toggleTimer = document.getElementById('hw-toggle-timer');
+  const closeCalendar = document.getElementById('hw-close-calendar');
+  const closeTimer = document.getElementById('hw-close-timer');
+
+  const today = new Date();
+  let currentMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+  let selectedDay = today;
+
+  const holidays = {
+    '1-1': 'Año Nuevo',
+    '5-1': 'Día del Trabajador',
+    '12-25': 'Navidad',
+    '12-31': 'Fin de año'
+  };
+  const specialDates = {
+    '5-10': 'Evento importante',
+    '6-15': 'Capacitación técnica',
+    '7-20': 'Revisión de sistema'
+  };
+
+  function getDayKey(date) {
+    return `${date.getMonth() + 1}-${date.getDate()}`;
+  }
+
+  function getNote(date) {
+    const key = getDayKey(date);
+    return holidays[key] || specialDates[key] || '';
+  }
+
+  function renderCalendar() {
+    hwMiniCalendar.innerHTML = '';
+    dayNames.forEach(name => {
+      const cell = document.createElement('div');
+      cell.className = 'mini-day-name';
+      cell.textContent = name;
+      hwMiniCalendar.appendChild(cell);
+    });
+
+    const firstDayIndex = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).getDay();
+    const monthLength = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate();
+
+    for (let i = 0; i < firstDayIndex; i++) {
+      const empty = document.createElement('div');
+      empty.className = 'mini-date empty';
+      hwMiniCalendar.appendChild(empty);
+    }
+
+    for (let day = 1; day <= monthLength; day++) {
+      const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'mini-date';
+      button.textContent = day;
+      const note = getNote(date);
+      const isToday = date.toDateString() === today.toDateString();
+      const isSelected = date.toDateString() === selectedDay.toDateString();
+
+      if (note) button.classList.add('mini-note');
+      if (isToday) button.classList.add('mini-today');
+      if (isSelected) button.classList.add('mini-selected');
+
+      button.addEventListener('click', () => {
+        selectedDay = date;
+        renderCalendar();
+        updateCalendarInfo();
+      });
+
+      hwMiniCalendar.appendChild(button);
+    }
+    hwMonthLabel.textContent = currentMonth.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+  }
+
+  function updateCalendarInfo() {
+    const note = getNote(selectedDay);
+    hwCalendarInfo.textContent = note
+      ? `${selectedDay.toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })}: ${note}`
+      : `${selectedDay.toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })}: sin eventos`;
+  }
+
+  function togglePanel(panel, button, open) {
+    const isOpen = typeof open === 'boolean' ? open : !panel.classList.contains('active');
+    panel.classList.toggle('active', isOpen);
+    panel.setAttribute('aria-hidden', (!isOpen).toString());
+    button.setAttribute('aria-pressed', isOpen.toString());
+    button.setAttribute('aria-label', isOpen ? `Ocultar ${button.textContent.toLowerCase()}` : `Mostrar ${button.textContent.toLowerCase()}`);
+  }
+
+  hwPrev.addEventListener('click', () => {
+    currentMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1);
+    renderCalendar();
+    updateCalendarInfo();
+  });
+
+  hwNext.addEventListener('click', () => {
+    currentMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1);
+    renderCalendar();
+    updateCalendarInfo();
+  });
+
+  toggleCalendar.addEventListener('click', () => {
+    togglePanel(hwCalendarPanel, toggleCalendar);
+  });
+
+  toggleTimer.addEventListener('click', () => {
+    togglePanel(hwTimerPanel, toggleTimer);
+  });
+
+  closeCalendar.addEventListener('click', () => {
+    togglePanel(hwCalendarPanel, toggleCalendar, false);
+  });
+
+  closeTimer.addEventListener('click', () => {
+    togglePanel(hwTimerPanel, toggleTimer, false);
+  });
+
+  renderCalendar();
+  updateCalendarInfo();
+
+  const timerDisplay = document.getElementById('hw-timer-display');
+  const timerStatus = document.getElementById('hw-timer-status');
+  const timerModeLabel = document.getElementById('hw-timer-mode');
+  const timerStart = document.getElementById('hw-timer-start');
+  const timerPause = document.getElementById('hw-timer-pause');
+  const timerReset = document.getElementById('hw-timer-reset');
+
+  const timerModes = {
+    work: { label: 'Focus', seconds: 25 * 60, color: 'var(--primary)' },
+    break: { label: 'Descanso', seconds: 5 * 60, color: 'var(--accent2)' },
+    custom: { label: 'Libre', seconds: 15 * 60, color: 'var(--accent3)' }
+  };
+
+  let timerMode = 'work';
+  let timerRemaining = timerModes[timerMode].seconds;
+  let timerInterval = null;
+
+  function formatTime(value) {
+    const minutes = Math.floor(value / 60);
+    const seconds = value % 60;
+    return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  }
+
+  function updateTimer() {
+    timerDisplay.textContent = formatTime(timerRemaining);
+    timerDisplay.style.background = `linear-gradient(135deg, ${timerModes[timerMode].color} 0%, rgba(255,255,255,0.08) 100%)`;
+    timerStatus.textContent = timerInterval ? 'En curso' : 'Listo';
+  }
+
+  function startTimer() {
+    if (timerInterval) return;
+    timerInterval = setInterval(() => {
+      if (timerRemaining > 0) {
+        timerRemaining -= 1;
+        updateTimer();
+      } else {
+        clearInterval(timerInterval);
+        timerInterval = null;
+        timerStatus.textContent = 'Completo';
+      }
+    }, 1000);
+    timerStatus.textContent = 'En curso';
+  }
+
+  function pauseTimer() {
+    if (!timerInterval) return;
+    clearInterval(timerInterval);
+    timerInterval = null;
+    timerStatus.textContent = 'Pausado';
+  }
+
+  function resetTimer() {
+    clearInterval(timerInterval);
+    timerInterval = null;
+    timerRemaining = timerModes[timerMode].seconds;
+    timerStatus.textContent = 'Listo';
+    updateTimer();
+  }
+
+  timerStart.addEventListener('click', startTimer);
+  timerPause.addEventListener('click', pauseTimer);
+  timerReset.addEventListener('click', resetTimer);
+
+  updateTimer();
+</script>

@@ -1,0 +1,130 @@
+---
+---
+<section class="glass-panel timer-card">
+  <div class="section-header">
+    <div>
+      <span class="section-tag">Cronómetro</span>
+      <h3 id="timer-title">Tiempo en sesión</h3>
+    </div>
+    <span id="timer-status" class="date-note">Listo</span>
+  </div>
+  <div class="timer-display" id="timer-display">00:00:00</div>
+  <div class="timer-progress-container">
+    <div class="timer-progress-track">
+      <div id="timer-progress" class="timer-progress"></div>
+    </div>
+  </div>
+  <div class="timer-controls">
+    <button id="timer-start" class="button primary">Iniciar</button>
+    <button id="timer-pause" class="button secondary">Pausar</button>
+    <button id="timer-reset" class="button secondary">Reiniciar</button>
+  </div>
+  <div class="timer-mode-list">
+    <button class="button secondary small" data-mode="work">Focus</button>
+    <button class="button secondary small" data-mode="break">Descanso</button>
+    <button class="button secondary small" data-mode="custom">Libre</button>
+  </div>
+</section>
+
+<script is:inline>
+  const display = document.getElementById('timer-display');
+  const status = document.getElementById('timer-status');
+  const timerTitle = document.getElementById('timer-title');
+  const progressBar = document.getElementById('timer-progress');
+  const startButton = document.getElementById('timer-start');
+  const pauseButton = document.getElementById('timer-pause');
+  const resetButton = document.getElementById('timer-reset');
+  const modeButtons = document.querySelectorAll('.timer-mode-list button');
+
+  const modes = {
+    work: { label: 'Focus', seconds: 25 * 60, accent: 'var(--primary)' },
+    break: { label: 'Descanso', seconds: 5 * 60, accent: 'var(--accent2)' },
+    custom: { label: 'Libre', seconds: 15 * 60, accent: 'var(--accent3)' }
+  };
+
+  function loadTimerConfig() {
+    const config = window.PORTAFOLIO_CONFIG?.timer;
+    if (!config) return;
+    if (Number.isFinite(config.focusMinutes)) modes.work.seconds = config.focusMinutes * 60;
+    if (Number.isFinite(config.breakMinutes)) modes.break.seconds = config.breakMinutes * 60;
+    if (Number.isFinite(config.customMinutes)) modes.custom.seconds = config.customMinutes * 60;
+    if (!active) {
+      remaining = modes[currentMode].seconds;
+      updateTimerDisplay();
+    }
+  }
+
+  let currentMode = 'work';
+  let remaining = modes[currentMode].seconds;
+  let interval = null;
+  let active = false;
+
+  function formatTime(value) {
+    return String(value).padStart(2, '0');
+  }
+
+  function updateTimerDisplay() {
+    const hours = Math.floor(remaining / 3600);
+    const minutes = Math.floor((remaining % 3600) / 60);
+    const seconds = remaining % 60;
+    display.textContent = `${formatTime(hours)}:${formatTime(minutes)}:${formatTime(seconds)}`;
+
+    const percent = 100 - Math.round((remaining / modes[currentMode].seconds) * 100);
+    progressBar.style.width = `${percent}%`;
+    progressBar.style.background = modes[currentMode].accent;
+  }
+
+  function setMode(mode) {
+    currentMode = mode;
+    remaining = modes[currentMode].seconds;
+    timerTitle.textContent = `${modes[currentMode].label} activo`;
+    modeButtons.forEach(button => button.classList.toggle('active', button.dataset.mode === mode));
+    status.textContent = 'Listo';
+    updateTimerDisplay();
+  }
+
+  function startTimer() {
+    if (interval) return;
+    interval = setInterval(() => {
+      if (remaining > 0) {
+        remaining -= 1;
+        updateTimerDisplay();
+      } else {
+        clearInterval(interval);
+        interval = null;
+        status.textContent = 'Completo';
+      }
+    }, 1000);
+    status.textContent = 'En curso';
+    active = true;
+  }
+
+  function pauseTimer() {
+    if (!interval) return;
+    clearInterval(interval);
+    interval = null;
+    status.textContent = 'Pausado';
+    active = false;
+  }
+
+  function resetTimer() {
+    clearInterval(interval);
+    interval = null;
+    active = false;
+    remaining = modes[currentMode].seconds;
+    status.textContent = 'Listo';
+    updateTimerDisplay();
+  }
+
+  startButton.addEventListener('click', startTimer);
+  pauseButton.addEventListener('click', pauseTimer);
+  resetButton.addEventListener('click', resetTimer);
+
+  modeButtons.forEach(button => {
+    button.addEventListener('click', () => setMode(button.dataset.mode));
+  });
+
+  window.addEventListener('portafolioConfigLoaded', loadTimerConfig);
+  loadTimerConfig();
+  setMode(currentMode);
+</script>

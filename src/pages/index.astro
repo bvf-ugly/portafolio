@@ -1,0 +1,27 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Hero from '../components/Hero.astro';
+import PanelControls from '../components/PanelControls.astro';
+import About from '../components/About.astro';
+import Experience from '../components/Experience.astro';
+import Calendar from '../components/Calendar.astro';
+import Timer from '../components/Timer.astro';
+import Config from '../components/Config.astro';
+import Contact from '../components/Contact.astro';
+---
+<BaseLayout>
+  <Hero />
+  <PanelControls />
+  <About />
+  <Experience />
+  <section class="section section-grid-panel">
+    <div id="calendar-section" class="panel-section">
+      <Calendar />
+    </div>
+    <div id="timer-section" class="panel-section">
+      <Timer />
+    </div>
+  </section>
+  <Config />
+  <Contact />
+</BaseLayout>

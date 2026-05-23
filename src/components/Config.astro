@@ -1,0 +1,191 @@
+---
+const { active = false } = Astro.props;
+---
+<section id="config-section" class={`glass-panel config-card panel-section${active ? ' active' : ''}`} aria-hidden={active ? 'false' : 'true'}>
+  <div class="section-header">
+    <div>
+      <span class="section-tag">Configuración</span>
+      <h3>Ajustes de la app</h3>
+    </div>
+    <span class="date-note">Guarda tu tema, fondo y preferencias</span>
+  </div>
+
+  <div class="config-grid">
+    <div class="config-group">
+      <h4>Tema</h4>
+      <label class="config-option"><input type="radio" name="theme" value="dark" checked /> Oscuro</label>
+      <label class="config-option"><input type="radio" name="theme" value="light" /> Claro</label>
+    </div>
+
+    <div class="config-group">
+      <h4>Fondo</h4>
+      <div class="background-options" id="background-options"></div>
+    </div>
+
+    <div class="config-group">
+      <h4>Opciones de calendario</h4>
+      <label class="config-option"><input type="checkbox" id="calendar-show-events" /> Mostrar eventos</label>
+      <label class="config-option"><input type="checkbox" id="calendar-show-holidays" /> Mostrar días festivos</label>
+    </div>
+
+    <div class="config-group">
+      <h4>Opciones de cronómetro</h4>
+      <label class="config-option"><span>Focus (min)</span><input id="timer-focus" type="number" min="5" max="90" step="5" value="25" /></label>
+      <label class="config-option"><span>Descanso (min)</span><input id="timer-break" type="number" min="1" max="30" step="1" value="5" /></label>
+      <label class="config-option"><span>Libre (min)</span><input id="timer-custom" type="number" min="5" max="60" step="5" value="15" /></label>
+    </div>
+  </div>
+
+  <div class="config-actions">
+    <button id="config-save" class="button primary">Guardar ajustes</button>
+    <button id="config-reset" class="button secondary">Restablecer valores</button>
+  </div>
+  <p id="config-status" class="date-note" aria-live="polite"></p>
+</section>
+
+<script is:inline>
+  const backgrounds = [
+    {
+      id: 'aurora',
+      label: 'Aurora oscura',
+      url: 'https://images.unsplash.com/photo-1517602302552-471fe67acf66?auto=format&fit=crop&w=1400&q=80'
+    },
+    {
+      id: 'nebula',
+      label: 'Nebulosa',
+      url: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1400&q=80'
+    },
+    {
+      id: 'matrix',
+      label: 'Matriz',
+      url: 'https://images.unsplash.com/photo-1483721310020-03333e577078?auto=format&fit=crop&w=1400&q=80'
+    },
+    {
+      id: 'glass',
+      label: 'Cristal',
+      url: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1400&q=80'
+    }
+  ];
+
+  const statusText = document.getElementById('config-status');
+  const optionContainer = document.getElementById('background-options');
+
+  const configFields = {
+    theme: () => document.querySelector('input[name="theme"]:checked')?.value || 'dark',
+    background: () => document.querySelector('input[name="background"]:checked')?.value || backgrounds[0].id,
+    backgroundUrl: () => backgrounds.find(item => item.id === configFields.background())?.url || backgrounds[0].url,
+    calendar: () => ({
+      showEvents: document.getElementById('calendar-show-events').checked,
+      showHolidays: document.getElementById('calendar-show-holidays').checked
+    }),
+    timer: () => ({
+      focusMinutes: Number(document.getElementById('timer-focus').value || 25),
+      breakMinutes: Number(document.getElementById('timer-break').value || 5),
+      customMinutes: Number(document.getElementById('timer-custom').value || 15)
+    })
+  };
+
+  function createBackgroundOption(item) {
+    const label = document.createElement('label');
+    label.className = 'background-card';
+    label.innerHTML = `
+      <input type="radio" name="background" value="${item.id}" />
+      <div class="background-preview" style="background-image: url('${item.url}')"></div>
+      <span>${item.label}</span>
+    `;
+    return label;
+  }
+
+  function renderBackgroundOptions() {
+    backgrounds.forEach(item => optionContainer.appendChild(createBackgroundOption(item)));
+  }
+
+  function setPageTheme(config) {
+    document.documentElement.classList.toggle('theme-light', config.theme === 'light');
+    document.documentElement.style.setProperty('--background-image', `url('${config.backgroundUrl}')`);
+  }
+
+  async function loadConfig() {
+    try {
+      const response = await fetch('/api/config');
+      if (!response.ok) throw new Error('No se pudo cargar la configuración');
+      const config = await response.json();
+      applyConfigToForm(config);
+      setPageTheme(config);
+    } catch (error) {
+      console.warn(error);
+      const defaultConfig = {
+        theme: 'dark',
+        background: backgrounds[0].id,
+        backgroundUrl: backgrounds[0].url,
+        calendar: { showEvents: true, showHolidays: true },
+        timer: { focusMinutes: 25, breakMinutes: 5, customMinutes: 15 }
+      };
+      setPageTheme(defaultConfig);
+    }
+  }
+
+  function applyConfigToForm(config) {
+    document.querySelector(`input[name="theme"][value="${config.theme}"]`)?.checked = true;
+    document.querySelector(`input[name="background"][value="${config.background}"]`)?.checked = true;
+    document.getElementById('calendar-show-events').checked = config.calendar.showEvents;
+    document.getElementById('calendar-show-holidays').checked = config.calendar.showHolidays;
+    document.getElementById('timer-focus').value = config.timer.focusMinutes;
+    document.getElementById('timer-break').value = config.timer.breakMinutes;
+    document.getElementById('timer-custom').value = config.timer.customMinutes;
+  }
+
+  function getFormConfig() {
+    return {
+      theme: configFields.theme(),
+      background: configFields.background(),
+      backgroundUrl: configFields.backgroundUrl(),
+      calendar: configFields.calendar(),
+      timer: configFields.timer()
+    };
+  }
+
+  async function saveConfig() {
+    const payload = getFormConfig();
+    try {
+      const response = await fetch('/api/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (!response.ok) throw new Error('No se pudo guardar');
+      const result = await response.json();
+      setPageTheme(result.config);
+      statusText.textContent = 'Configuración guardada correctamente.';
+    } catch (error) {
+      statusText.textContent = 'Error al guardar la configuración. Usa localStorage o configura SQL Server Express.';
+      console.error(error);
+    }
+  }
+
+  function resetConfig() {
+    const defaultConfig = {
+      theme: 'dark',
+      background: backgrounds[0].id,
+      backgroundUrl: backgrounds[0].url,
+      calendar: { showEvents: true, showHolidays: true },
+      timer: { focusMinutes: 25, breakMinutes: 5, customMinutes: 15 }
+    };
+    applyConfigToForm(defaultConfig);
+    setPageTheme(defaultConfig);
+    statusText.textContent = 'Valores restablecidos. Guarda los cambios para persistencia.';
+  }
+
+  renderBackgroundOptions();
+  loadConfig();
+
+  document.getElementById('config-save').addEventListener('click', event => {
+    event.preventDefault();
+    saveConfig();
+  });
+
+  document.getElementById('config-reset').addEventListener('click', event => {
+    event.preventDefault();
+    resetConfig();
+  });
+</script>

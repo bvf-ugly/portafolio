@@ -1,0 +1,42 @@
+---
+---
+<section class="glass-panel panel-controls">
+  <div class="section-header">
+    <div>
+      <span class="section-tag">Paneles</span>
+      <h3>Mostrar / ocultar</h3>
+    </div>
+    <span class="date-note">Activa el calendario, cronómetro y configuración</span>
+  </div>
+  <div class="panel-actions">
+    <button id="toggle-calendar" class="button secondary small" data-label="Calendario">Calendario</button>
+    <button id="toggle-timer" class="button secondary small" data-label="Cronómetro">Cronómetro</button>
+    <button id="toggle-config" class="button secondary small" data-label="Configuración">Configuración</button>
+    <a class="button secondary small" href="/panels">Paneles ampliados</a>
+  </div>
+</section>
+
+<script is:inline>
+  window.addEventListener('DOMContentLoaded', () => {
+    const toggleMap = [
+      { buttonId: 'toggle-calendar', targetId: 'calendar-section' },
+      { buttonId: 'toggle-timer', targetId: 'timer-section' },
+      { buttonId: 'toggle-config', targetId: 'config-section' }
+    ];
+
+    toggleMap.forEach(({ buttonId, targetId }) => {
+      const button = document.getElementById(buttonId);
+      const target = document.getElementById(targetId);
+      if (!button || !target) return;
+
+      const label = button.dataset.label || button.textContent.trim();
+      button.addEventListener('click', () => {
+        const isActive = target.classList.toggle('active');
+        button.classList.toggle('primary', isActive);
+        button.classList.toggle('secondary', !isActive);
+        target.setAttribute('aria-hidden', (!isActive).toString());
+        button.textContent = `${isActive ? 'Ocultar' : 'Mostrar'} ${label}`;
+      });
+    });
+  });
+</script>

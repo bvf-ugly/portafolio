@@ -1,0 +1,183 @@
+---
+import Header from '../components/Header.astro';
+import '../styles/global.css';
+---
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Portafolio</title>
+    <meta
+      name="description"
+      content="Portafolio de un analista junior con experiencia en Linux, soporte y bases de datos."
+    />
+    <script is:inline>
+      const defaultPalettes = [
+        {
+          bg: '#08111f',
+          surface: 'rgba(11, 16, 28, 0.72)',
+          surfaceStrong: 'rgba(8, 12, 20, 0.9)',
+          text: '#f1f5ff',
+          muted: '#9ba8c7',
+          primary: '#6dd7ff',
+          primaryDark: '#40b3e2',
+          accent2: '#ff97c2',
+          accent3: '#ffd86d',
+          backgroundUrl: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&w=2000&q=80'
+        },
+        {
+          bg: '#0d131d',
+          surface: 'rgba(15, 21, 34, 0.74)',
+          surfaceStrong: 'rgba(10, 15, 25, 0.88)',
+          text: '#f4f7ff',
+          muted: '#a0accf',
+          primary: '#7ad8ff',
+          primaryDark: '#49b0ff',
+          accent2: '#ffb26a',
+          accent3: '#cb78ff',
+          backgroundUrl: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=2000&q=80'
+        }
+      ];
+
+      const root = document.documentElement.style;
+
+      function applyPalette(palette) {
+        Object.entries(palette).forEach(([key, value]) => {
+          if (key === 'backgroundUrl') return;
+          root.setProperty(`--${key}`, value);
+        });
+        root.setProperty('--background-image', `url('${palette.backgroundUrl}')`);
+      }
+
+      function applyConfig(config) {
+        document.documentElement.classList.toggle('theme-light', config.theme === 'light');
+        if (config.backgroundUrl) {
+          root.setProperty('--background-image', `url('${config.backgroundUrl}')`);
+        }
+        if (config.theme === 'light') {
+          root.setProperty('--bg', '#f4f7ff');
+          root.setProperty('--surface', 'rgba(255, 255, 255, 0.85)');
+          root.setProperty('--surface-strong', 'rgba(250, 250, 255, 0.9)');
+          root.setProperty('--text', '#0f172a');
+          root.setProperty('--muted', '#475569');
+        }
+      }
+
+      function fallbackPalette() {
+        applyPalette(defaultPalettes[new Date().getHours() % defaultPalettes.length]);
+      }
+
+      async function loadConfig() {
+        try {
+          const response = await fetch('/api/config');
+          if (!response.ok) throw new Error('No config');
+          const config = await response.json();
+          applyConfig(config);
+          window.PORTAFOLIO_CONFIG = config;
+          window.dispatchEvent(new CustomEvent('portafolioConfigLoaded', { detail: config }));
+        } catch {
+          fallbackPalette();
+        }
+      }
+
+      applyPalette(defaultPalettes[new Date().getHours() % defaultPalettes.length]);
+      window.addEventListener('DOMContentLoaded', loadConfig);
+
+      const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+
+      function getLuminance([r, g, b]) {
+        const a = [r, g, b].map(v => {
+          const x = v / 255;
+          return x <= 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4);
+        });
+        return 0.2126 * a[0] + 0.7152 * a[1] + 0.0722 * a[2];
+      }
+
+      function hexFromRgb([r, g, b]) {
+        return `#${[r, g, b].map(v => v.toString(16).padStart(2, '0')).join('')}`;
+      }
+
+      function shiftColor([r, g, b], amount) {
+        return [
+          clamp(Math.round(r + amount), 0, 255),
+          clamp(Math.round(g + amount), 0, 255),
+          clamp(Math.round(b + amount), 0, 255)
+        ];
+      }
+
+      function applyPalette(palette) {
+        Object.entries(palette).forEach(([key, value]) => {
+          root.setProperty(`--${key}`, value);
+        });
+      }
+
+      function fallbackPalette() {
+        applyPalette(defaultPalettes[new Date().getHours() % defaultPalettes.length]);
+      }
+
+      async function extractPalette(url) {
+        try {
+          const img = new Image();
+          img.crossOrigin = 'anonymous';
+          img.src = url;
+          await img.decode();
+
+          const canvas = document.createElement('canvas');
+          const size = 80;
+          canvas.width = canvas.height = size;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, size, size);
+
+          const imageData = ctx.getImageData(0, 0, size, size).data;
+          let r = 0, g = 0, b = 0, count = 0;
+          for (let i = 0; i < imageData.length; i += 4) {
+            const alpha = imageData[i + 3] / 255;
+            if (alpha < 0.5) continue;
+            r += imageData[i];
+            g += imageData[i + 1];
+            b += imageData[i + 2];
+            count += 1;
+          }
+          if (!count) throw new Error('No pixels sampled');
+
+          const avg = [Math.round(r / count), Math.round(g / count), Math.round(b / count)];
+          const brightness = getLuminance(avg);
+          const text = brightness > 0.45 ? '#111827' : '#f8fafc';
+          const bg = hexFromRgb(avg);
+          const primary = hexFromRgb(shiftColor(avg, 90));
+          const accent2 = hexFromRgb(shiftColor(avg, 120));
+          const accent3 = hexFromRgb(shiftColor(avg, 60));
+          const muted = brightness > 0.45 ? '#d6d9e6' : '#9ca3af';
+          const surface = `rgba(${avg.join(',')}, 0.72)`;
+          const surfaceStrong = `rgba(${avg.join(',')}, 0.9)`;
+
+          applyPalette({
+            bg,
+            surface,
+            surfaceStrong,
+            text,
+            muted,
+            primary,
+            primaryDark: primary,
+            accent2,
+            accent3
+          });
+        } catch (error) {
+          fallbackPalette();
+        }
+      }
+
+      if ('requestIdleCallback' in window) {
+        requestIdleCallback(() => extractPalette(imageUrl));
+      } else {
+        window.setTimeout(() => extractPalette(imageUrl), 200);
+      }
+    </script>
+  </head>
+  <body class="app-body">
+    <Header />
+    <main class="page-shell">
+      <slot />
+    </main>
+  </body>
+</html>
